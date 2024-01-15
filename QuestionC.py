@@ -2,18 +2,20 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 from Models import Black_Scholes, Vector_Model
+from WienerProcesses import Wiener
 
 def Plot_different_timesteps(n_list, model, X_0, W, t_end=1, Euler=True):
     dt_list = [t_end/n_list[i] for i in range(len(n_list))]
     for size in n_list:
-            W_sample = W[::int(n_list[0]/size),:,0]
-            t = np.linspace(0, t_end, int(size))
-            
-            if Euler==True:
-                x = model.euler_method(X_0[0], W_sample,t)
-            else:
-                x = model.milstein_method(X_0[0], W_sample,t)
-            plt.plot(t,x,label=f"dt={t_end/size}")
+        dt = t_end/size
+        W_sample = W.sample(dt)
+        t = np.linspace(0, t_end, int(size))
+        
+        if Euler==True:
+            x = model.euler_method(X_0, W_sample,t)
+        else:
+            x = model.milstein_method(X_0, W_sample,t)
+        plt.plot(t,x,label=f"dt={t_end/size}")
     plt.xlabel("t")
     plt.ylabel("X")
     plt.title("Different timesteps")
@@ -23,8 +25,6 @@ def Plot_different_timesteps(n_list, model, X_0, W, t_end=1, Euler=True):
     plt.show()
     return
         
-
-
 def Strong_convergence(n_list, n_realisations, model, X_0, W, t_end=1):
     dt_list = [t_end/n_list[i] for i in range(len(n_list))]
 
@@ -34,11 +34,12 @@ def Strong_convergence(n_list, n_realisations, model, X_0, W, t_end=1):
     for j in range(n_realisations):
         print(f"{j+1}/{n_realisations}")
         for size in n_list:
-            W_sample = W[::int(n_list[0]/size),:,j]
+            dt = t_end/size
+            W_sample = W.sample(dt,j)
             t = np.linspace(0, t_end, int(size))
             
-            x_euler = model.euler_method(X_0[0], W_sample,t)
-            x_milstein = model.milstein_method(X_0[0], W_sample,t)
+            x_euler = model.euler_method(X_0, W_sample,t)
+            x_milstein = model.milstein_method(X_0, W_sample,t)
             #plt.plot(t,x_milstein)
 
             if size == n_list[0]:
@@ -61,7 +62,6 @@ def Strong_convergence(n_list, n_realisations, model, X_0, W, t_end=1):
     plt.show()
 
 
-
 if __name__ == "__main__":  
     #Parameters
     mu = 0.01
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     S_0 = 50
     X_0 = [S_0,xi_0,sigma_0]
 
-    model = Black_Scholes(mu, sigma_0) #Vector_Model(mu, alpha, p)
+    model = Vector_Model(mu, alpha, p) #Black_Scholes(mu, sigma_0)
     #Time
     order = 6
     n = [int(10**i) for i in range(order,0,-1)]
@@ -85,10 +85,9 @@ if __name__ == "__main__":
     t_end = 1
     dt = dt_list[0]
 
-    np.random.seed(0)
     n_realisations = 2
     #ensure all methods use the same random numbers to ensure fair comparison
-    W = np.cumsum(np.random.normal(size=(int(n[0]),3,n_realisations),scale=math.sqrt(dt)),axis=0)
+    W = Wiener(int(n[0]), n_realisations, dt,seed=0)
 
     #Plot_different_timesteps(n, model, X_0, W, t_end=t_end, Euler=True)
     Strong_convergence(n, n_realisations, model, X_0, W, t_end=t_end)

@@ -55,7 +55,10 @@ class Black_Scholes:
         dt = t[1]-t[0]
         self.dt = dt
         x = np.zeros(len(t))
-        x[0] = x_0
+        if type(x_0) == list:
+            x[0] = x_0[0]
+        else:
+            x[0] = x_0
 
         for time in range(len(t)-1):
             x[time+1] = x[time] + self.f(time,x[time])*dt + self.g(time,x[time])*(W[time+1,0]-W[time,0])
@@ -65,7 +68,10 @@ class Black_Scholes:
         dt = t[1]-t[0]
         self.dt = dt
         x = np.zeros(len(t))
-        x[0] = x_0
+        if type(x_0) == list:
+            x[0] = x_0[0]
+        else:
+            x[0] = x_0
 
         for time in range(len(t)-1):
             x[time+1] = x[time] + self.f(time,x[time])*dt + self.g(time,x[time])*(W[time+1,0]-W[time,0]) + 0.5*self.g(time,x[time])*self.g_prime(time,x[time])*((W[time+1,0]-W[time,0])**2 - dt)
