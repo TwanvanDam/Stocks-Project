@@ -65,8 +65,8 @@ def Strong_convergence_Vector(n_list:list, n_realisations:int, model, X_0:list, 
     plt.show()
     return 
 
-def h(x,exponent):
-    return np.power(x,exponent)
+def h(x,power):
+    return np.power(x,power)
 
 def Weak_convergence_Vector(n_list:list, n_realisations:int, model, X_0:float, W, t_end=1,exponent:list=[1]):
     """
@@ -90,8 +90,8 @@ def Weak_convergence_Vector(n_list:list, n_realisations:int, model, X_0:float, W
     milstein_error = np.zeros((len(n_list),len(exponent)))                                     #list of errors for Milstein     
     
     #list to store the average of h(solution)
-    x_exact_euler_avg = np.zeros((len(exponent)))  
-    x_exact_milstein_avg = np.zeros((len(exponent)))  
+    x_exact_euler_avg = np.zeros((n_realisations,len(exponent)))  
+    x_exact_milstein_avg = np.zeros((n_realisations,len(exponent)))  
 
     t =  np.linspace(0, t_end, n_list[0]+1)
     
@@ -100,12 +100,13 @@ def Weak_convergence_Vector(n_list:list, n_realisations:int, model, X_0:float, W
         print(f"Calculating {i+1}/{n_realisations} exact solutions")
         W_sample = W[:,:,i]
         
-        x_exact_euler = model.euler_method(X_0,W_sample,t)
-        x_exact_milstein = model.milstein_method(X_0,W_sample,t)
-        
+        x_exact_euler = model.euler_method(X_0,W_sample,t)[-1]
+        x_exact_milstein = model.milstein_method(X_0,W_sample,t)[-1]
+        #print(x_exact_euler,i)
+
         for j in range(len(exponent)):
-            x_exact_euler_avg[j] += h(x_exact_euler[-1],exponent[j])/n_realisations
-            x_exact_milstein_avg[j] += h(x_exact_milstein[-1],exponent[j])/n_realisations
+            x_exact_euler_avg[i,j] = h(x_exact_euler,exponent[j])
+            x_exact_milstein_avg[i,j] = h(x_exact_milstein,exponent[j])
 
     for n_timesteps in n_list[1:]:
         #sampling rate for the Wiener Process
@@ -113,8 +114,8 @@ def Weak_convergence_Vector(n_list:list, n_realisations:int, model, X_0:float, W
         t = np.linspace(0, t_end, n_timesteps+1)
         
         #array to store average of the realisations for this n_timesteps for the different h functions
-        x_euler_avg = np.zeros((len(exponent)))        
-        x_milstein_avg = np.zeros((len(exponent)))  
+        x_euler_avg = np.zeros((n_realisations,len(exponent)))        
+        x_milstein_avg = np.zeros((n_realisations,len(exponent)))  
         
         for i in range(n_realisations):
             W_sample = W[::sampling_rate,:,i]
@@ -123,13 +124,13 @@ def Weak_convergence_Vector(n_list:list, n_realisations:int, model, X_0:float, W
             x_milstein = model.milstein_method(X_0, W_sample, t)[-1]
             
             for j in range(len(exponent)):
-                x_euler_avg[j] += h(x_euler,exponent[j])/n_realisations
-                x_milstein_avg[j] += h(x_milstein,exponent[j])/n_realisations
-
+                #if j == 0:
+                 #   print(x_euler-x_exact_euler_avg[i,0])
+                x_euler_avg[i,j] = h(x_euler,exponent[j])
+                x_milstein_avg[i,j] = h(x_milstein,exponent[j])
         #Calculate the errors for this timestep
-        euler_error[n_list.index(n_timesteps),:] = np.abs(x_euler_avg - x_exact_euler_avg)
-        milstein_error[n_list.index(n_timesteps),:] = np.abs(x_milstein_avg-x_exact_milstein_avg)
-
+        euler_error[n_list.index(n_timesteps),:] = np.abs(np.mean(x_euler_avg,axis=0) - np.mean(x_exact_euler_avg,axis=0))
+        milstein_error[n_list.index(n_timesteps),:] = np.abs(np.mean(x_milstein_avg,axis=0)-np.mean(x_exact_milstein_avg,axis=0))
     
     """Make the plots"""
     for j in range(len(exponent)):
@@ -155,12 +156,12 @@ def Weak_convergence_Vector(n_list:list, n_realisations:int, model, X_0:float, W
 if __name__ == "__main__":  
     #Parameters
     mu = 0.10
-    p = 1
-    alpha = 1
+    p = 1.5
+    alpha = 1.2
     
     #Initial Conditions
     S_0 = 50
-    sigma_0 = 0.2
+    sigma_0 = 0.20
     xi_0 = 0.20
 
     X_0 = [S_0,sigma_0,xi_0]
@@ -171,7 +172,7 @@ if __name__ == "__main__":
     order = 4 #How fine are the timesteps. order = 5 => smallest dt = 10^-5
     t_end = 1
     
-    n_realisations = 100
+    n_realisations = 500
     np.random.seed(0)
 
     #list with the number of timesteps to use
@@ -187,6 +188,6 @@ if __name__ == "__main__":
     #Wiener Process should start at zero
     W = np.cumsum(np.vstack((np.zeros((1,3,n_realisations)),np.random.normal(size=(n[0],3,n_realisations),scale=np.sqrt(dt_list[0])))),axis=0)
     
-    Strong_convergence_Vector(n, n_realisations, model, X_0, W, t_end=t_end)
+    Weak_convergence_Vector(n, n_realisations, model, X_0, W, t_end=t_end,exponent=[1,2,3])
 
-    #Weak_convergence_Vector(n, n_realisations, model, X_0, W, t_end=t_end,exponent=[1,2,3])
+    #Strong_convergence_Vector(n, n_realisations, model, X_0, W, t_end=t_end)
