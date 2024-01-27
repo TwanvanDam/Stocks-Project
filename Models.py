@@ -32,6 +32,10 @@ class Vector_Model:
         dt = t[1]-t[0] 
         self.dt = dt
         x = np.zeros((len(t),3))
+        
+        if W.shape[-1] == 2: #only two seperate wiener processes are needed, a third row is added to be able to vectorize the for loop
+            W = np.hstack((W,np.zeros((len(t),1))))
+        
         x[0,:] = x_0
 
         for time in range(len(t)-1):
@@ -86,7 +90,7 @@ class Black_Scholes:
             x[0] = x_0
 
         for time in range(len(t)-1):
-            x[time+1] = x[time] + self.f(time,x[time])*dt + self.g(time,x[time])*(W[time+1,0]-W[time,0])
+            x[time+1] = x[time] + self.f(time,x[time])*dt + self.g(time,x[time])*(W[time+1]-W[time])
         return x
     
     def milstein_method(self, x_0, W,t):
@@ -99,9 +103,27 @@ class Black_Scholes:
             x[0] = x_0
 
         for time in range(len(t)-1):
-            x[time+1] = x[time] + self.f(time,x[time])*dt + self.g(time,x[time])*(W[time+1,0]-W[time,0]) + 0.5*self.g(time,x[time])*self.g_prime(time,x[time])*((W[time+1,0]-W[time,0])**2 - dt)
+            x[time+1] = x[time] + self.f(time,x[time])*dt + self.g(time,x[time])*(W[time+1]-W[time]) + 0.5*self.g(time,x[time])*self.g_prime(time,x[time])*((W[time+1]-W[time])**2 - dt)
         return x
     
+    def exact_solution(self, x_0, W,t):
+        x = np.zeros(len(t))
+        if type(x_0) == list:
+            x[0] = x_0[0]
+        else:
+            x[0] = x_0
+        
+        x = x[0]*np.exp((self.mu - 0.5*self.sigma_0**2)*t + self.sigma_0*W)
+        #print(t[0])
+        #print(W[0,0])
+        #print(np.exp((self.mu - 0.5*self.sigma_0**2)*t + self.sigma_0*W[:,0])[0])
+        #print(x.shape)
+        return x
+    
+def convergence_plot(plot_list_euler:np.ndarray,plot_list_milstein:np.ndarray,dt_list:list,title:str,model_name:str):
+
+    return
+
 if __name__ == "__main__":
     """Example of how to use the Vector_Model and the Black Scholes classes."""
     
@@ -121,20 +143,21 @@ if __name__ == "__main__":
 
     #Time
     t_end = 1
-    dt = 10e-2
+    dt = 10e-3 
     t = np.arange(0,t_end+dt,dt)
-    print(t.shape)
 
     #Wiener Process
-    W = np.cumsum(np.random.normal(size=(len(t)+1,3),scale=np.sqrt(dt)),axis=0)
+    W = np.cumsum(np.vstack((np.zeros((1,1)),np.random.normal(size=(len(t)-1,1),scale=np.sqrt(dt)))),axis=0)[:,0]
 
     #Simulate the SDE using the Euler and Milstein methods
     x_euler = model.euler_method(X_0, W,t)
     x_milstein = model.milstein_method(X_0, W,t)
+    x_exact = model.exact_solution(X_0, W,t)
 
     #Plot the results
     plt.plot(t,x_milstein,label="milstein")
     plt.plot(t,x_euler,label="euler")
+    plt.plot(t,x_exact,label="exact")
     plt.grid()
     plt.xlabel("t")
     plt.ylabel("X")
