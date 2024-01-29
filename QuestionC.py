@@ -64,7 +64,7 @@ def Strong_convergence_BS(n_list:list, n_realisations:int, model, X_0:float, W:n
 
 if __name__ == "__main__":  
     #Parameters
-    mu = 0.01
+    mu = 0.1
     sigma_0 = 0.2
     
     #Initial Conditions

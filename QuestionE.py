@@ -61,7 +61,7 @@ def Strong_convergence_Vector(n_list:list, n_realisations:int, model, X_0:list, 
     plt.title("Strong Convergence")
     plt.grid()
     plt.legend()
-    plt.savefig("./Plots/StrongeConvergence_" + model.name +".png",dpi=300)
+    plt.savefig(f"./Plots/P={p}Alpha={alpha}/StrongConvergence{n_realisations}" + model.name +".png",dpi=300)
     plt.show()
     return 
 
@@ -148,7 +148,7 @@ def Weak_convergence_Vector(n_list:list, n_realisations:int, model, X_0:float, W
         plt.ylabel("Error")
         plt.title(f"Weak Convergence x^{exponent[j]}")
         plt.legend()
-        plt.savefig(f"./Plots/Weak_convergence_{exponent[j]}_{model.name}.png",dpi=300)
+        plt.savefig(f"./Plots/P={p}Alpha={alpha}/Weak_convergence_{exponent[j]}_{n_realisations}_{model.name}.png",dpi=300)
         plt.show()
     return
 
@@ -156,7 +156,7 @@ def Weak_convergence_Vector(n_list:list, n_realisations:int, model, X_0:float, W
 if __name__ == "__main__":  
     #Parameters
     mu = 0.10
-    p = 1.5
+    p = 0.5
     alpha = 1.2
     
     #Initial Conditions
@@ -169,10 +169,10 @@ if __name__ == "__main__":
     #initialize the model
     model = Vector_Model(mu,alpha,p)
     
-    order = 4 #How fine are the timesteps. order = 5 => smallest dt = 10^-5
+    order = 5 #How fine are the timesteps. order = 5 => smallest dt = 10^-5
     t_end = 1
     
-    n_realisations = 500
+    n_realisations = 100
     np.random.seed(0)
 
     #list with the number of timesteps to use
@@ -190,4 +190,4 @@ if __name__ == "__main__":
     
     Weak_convergence_Vector(n, n_realisations, model, X_0, W, t_end=t_end,exponent=[1,2,3])
 
-    #Strong_convergence_Vector(n, n_realisations, model, X_0, W, t_end=t_end)
+    Strong_convergence_Vector(n, n_realisations, model, X_0, W, t_end=t_end)
